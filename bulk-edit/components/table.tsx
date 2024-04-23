@@ -1,9 +1,10 @@
-import {DataGrid, GridColDef} from '@mui/x-data-grid'
+import {DataGrid, GridColDef, useGridApiContext, useGridApiRef} from '@mui/x-data-grid'
 import {Dispatch, SetStateAction} from 'react'
 import {SanityDocument} from 'sanity'
 
 const columns: GridColDef[] = [
   {field: 'title', headerName: 'Title', width: 170},
+  {field: '_type', headerName: 'Type', width: 170},
   {field: '_updatedAt', headerName: 'Updated at', width: 260},
   {field: 'id', headerName: 'ID', width: 260},
 
@@ -21,6 +22,7 @@ export default function DataTable({
   rows,
   selected,
   setSelected,
+  apiRef,
 }: {
   rows: SanityDocument[]
   selected: string[]
@@ -29,6 +31,7 @@ export default function DataTable({
   return (
     <div style={{height: 400, width: '100%'}}>
       <DataGrid
+        ref={apiRef}
         rows={rows}
         columns={columns}
         initialState={{
@@ -38,6 +41,9 @@ export default function DataTable({
         }}
         pageSizeOptions={[5, 10]}
         checkboxSelection
+        onColumnHeaderClick={({field}, e, d) => {
+          if (field !== '__check__') return
+        }}
         onCellClick={(p) => {
           const {field, row, value} = p
           // Return early for all fields but the checkbox
