@@ -1,32 +1,9 @@
 import {useEffect, useCallback, useState} from 'react'
 import {PublishIcon, UnpublishIcon} from '@sanity/icons'
-import {useGridApiRef, type GridRowSelectionModel} from '@mui/x-data-grid'
+import {type GridRowSelectionModel} from '@mui/x-data-grid'
 import {Card, Container, Stack, Heading, Text, Flex, Button, useToast} from '@sanity/ui'
 import DataTable from './table'
 import {SanityDocument, useClient, useDataset, useProjectId, useSchema} from 'sanity'
-
-// Perspective is 'raw' by default
-// TODO fix any
-function previewDrafts(docs: any[]) {
-  // At this point I should just set up a non-useClient client with perspectives?
-  const draftDocIds = docs.filter(({_id}) => _id.startsWith('drafts.')).map(({_id}) => _id.slice(7))
-  const filteredDocs = docs.filter(({_id}) => !draftDocIds.includes(_id))
-  return filteredDocs.map((doc) => {
-    // Clear out "drafts." from IDs
-    return {
-      ...doc,
-      id: removeDraftFromIds(doc.id),
-      _id: removeDraftFromIds(doc._id),
-    }
-  })
-}
-
-function removeDraftFromIds(_id: string) {
-  if (_id.startsWith('drafts.')) {
-    return _id.slice(7)
-  }
-  return _id
-}
 
 // Format selected IDs for Sanity Publishing API
 function format(arr: GridRowSelectionModel) {
@@ -38,25 +15,29 @@ function format(arr: GridRowSelectionModel) {
 }
 
 export default function BulkEdit() {
+  // Table state
   const [rows, setRows] = useState<SanityDocument[]>([])
-  const [selected, setSelected] = useState<GridRowSelectionModel>([])
-  const [error, setError] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const [rowSelectionModel, setRowSelectionModel] = useState<GridRowSelectionModel>([]) // which table rows are selected
+  const [paginationModel, setPaginationModel] = useState<{pageSize: number; page: number}>({
+    pageSize: 5,
+    page: 0,
+  }) // pagination info
+
+  // Data loading state
+  const [error, setError] = useState(false) // if there's an error with config or data fetches/manipulation
+  const [loading, setLoading] = useState(true) // when fetching/manipulation is in progress
 
   // Sanity toast for notifications
   const toast = useToast()
 
-  // Modify table state
-  const apiRef = useGridApiRef()
-
-  // Get Sanity schema info
+  // Get Sanity project info
   const schema = useSchema()
   const schemaTypes = schema.getTypeNames()
   const pid = useProjectId()
   const dataset = useDataset()
 
   // Initialize Sanity client
-  const client = useClient({apiVersion: '2024-04-21'})
+  const client = useClient({apiVersion: '2024-04-21'}).withConfig({perspective: 'previewDrafts'})
 
   // Fetch data for table rows
   const fetchTable = useCallback(async () => {
@@ -68,7 +49,7 @@ export default function BulkEdit() {
           schemaTypes,
         },
       )
-      setRows(previewDrafts(res))
+      setRows(res)
       setLoading(false)
     } catch (e) {
       console.error('Error fetching row data', error)
@@ -84,7 +65,7 @@ export default function BulkEdit() {
         .request({
           method: 'POST',
           uri: `/${action}/${pid}/${dataset}`,
-          body: format(selected),
+          body: format(rowSelectionModel),
         })
         .then((data) => {
           console.log(`${action} completed`, data)
@@ -92,8 +73,7 @@ export default function BulkEdit() {
             status: 'success',
             title: 'Success',
           })
-          setSelected([])
-          // reset table
+          setRowSelectionModel([])
           fetchTable()
         })
         .catch((error) => {
@@ -103,9 +83,8 @@ export default function BulkEdit() {
             title: 'Error, please try again',
           })
         })
-      // there has to be a better way
     },
-    [dataset, pid, client, selected, fetchTable, toast],
+    [dataset, pid, client, rowSelectionModel, fetchTable, toast],
   )
 
   // If no row data
@@ -114,6 +93,8 @@ export default function BulkEdit() {
     fetchTable()
   }, [fetchTable, rows, error])
 
+  // Use this to fetch data per page
+  useEffect(() => console.log('page', paginationModel), [paginationModel])
   return (
     <Container>
       <Stack space={4} padding={4}>
@@ -125,14 +106,14 @@ export default function BulkEdit() {
             <Button
               text="Unpublish"
               icon={UnpublishIcon}
-              onClick={(e) => modifyDocuments('unpublish')}
-              disabled={!selected.length || loading}
+              onClick={() => modifyDocuments('unpublish')}
+              disabled={!rowSelectionModel.length || loading}
             />
             <Button
               text="Publish"
               icon={PublishIcon}
-              onClick={(e) => modifyDocuments('publish')}
-              disabled={!selected.length || loading}
+              onClick={() => modifyDocuments('publish')}
+              disabled={!rowSelectionModel.length || loading}
             />
           </Flex>
         </Card>
@@ -142,7 +123,16 @@ export default function BulkEdit() {
               No available schema types in <code>sanity.config</code> file
             </Text>
           ) : (
-            <DataTable rows={rows} selected={selected} setSelected={setSelected} apiRef={apiRef} />
+            <DataTable
+              {...{
+                rows,
+                // apiRef,
+                paginationModel,
+                setPaginationModel,
+                rowSelectionModel,
+                setRowSelectionModel,
+              }}
+            />
           )}
         </Card>
       </Stack>
