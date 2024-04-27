@@ -1,9 +1,15 @@
 # Sanity Bulk Edit example
 
-Congratulations, you have now installed the Sanity Content Studio, an open source real-time content editing environment connected to the Sanity backend.
+An example of using [@mui/x-data-grid](https://mui.com/x/react-data-grid/) to manage content in Sanity.
 
-Now you can do the following things:
+The contents of `/bulk-edit` can be copied into your project, then just add the exported tool to your Sanity config:
 
-- [Read “getting started” in the docs](https://www.sanity.io/docs/introduction/getting-started?utm_source=readme)
-- [Join the community Slack](https://slack.sanity.io/?utm_source=readme)
-- [Extend and build plugins](https://www.sanity.io/docs/content-studio/extending?utm_source=readme)
+```typescript
+import {defineConfig} from 'sanity'
+import {bulkEdit} from './bulk-edit'
+
+export default defineConfig({
+  // ...rest of your config file
+  tools: [bulkEdit()],
+})
+```
