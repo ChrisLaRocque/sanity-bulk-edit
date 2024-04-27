@@ -1,21 +1,19 @@
-import {DataGrid, GridColDef, useGridApiContext, useGridApiRef} from '@mui/x-data-grid'
-import {Dispatch, SetStateAction} from 'react'
+import {
+  DataGrid,
+  GridColDef,
+  GridInputRowSelectionModel,
+  GridRowSelectionModel,
+} from '@mui/x-data-grid'
+import {GridApiCommunity} from '@mui/x-data-grid/internals'
+import {Dispatch, MutableRefObject, SetStateAction} from 'react'
 import {SanityDocument} from 'sanity'
 
+// Column config
 const columns: GridColDef[] = [
   {field: 'title', headerName: 'Title', width: 170},
   {field: '_type', headerName: 'Type', width: 170},
   {field: '_updatedAt', headerName: 'Updated at', width: 260},
   {field: 'id', headerName: 'ID', width: 260},
-
-  //   {
-  //     field: 'fullName',
-  //     headerName: 'Full name',
-  //     description: 'This column has a value getter and is not sortable.',
-  //     sortable: false,
-  //     width: 160,
-  //     valueGetter: (value, row) => `${row.firstName || ''} ${row.lastName || ''}`,
-  //   },
 ]
 
 export default function DataTable({
@@ -25,38 +23,27 @@ export default function DataTable({
   apiRef,
 }: {
   rows: SanityDocument[]
-  selected: string[]
-  setSelected: Dispatch<SetStateAction<string[] | never[]>>
+  selected: GridInputRowSelectionModel
+  setSelected: Dispatch<SetStateAction<GridRowSelectionModel>>
+  apiRef: MutableRefObject<GridApiCommunity>
 }) {
   return (
-    <div style={{height: 400, width: '100%'}}>
+    <div style={{height: `75vh`, width: '100%'}}>
       <DataGrid
         ref={apiRef}
         rows={rows}
         columns={columns}
         initialState={{
           pagination: {
-            paginationModel: {page: 0, pageSize: 5},
+            paginationModel: {page: 0, pageSize: 10},
           },
         }}
-        pageSizeOptions={[5, 10]}
+        pageSizeOptions={[10, 25, 50]}
         checkboxSelection
-        onColumnHeaderClick={({field}, e, d) => {
-          if (field !== '__check__') return
+        onRowSelectionModelChange={(newRowSelectionModel) => {
+          setSelected(newRowSelectionModel)
         }}
-        onCellClick={(p) => {
-          const {field, row, value} = p
-          // Return early for all fields but the checkbox
-          if (field !== '__check__') return
-          // The table returns 'false' if selected?
-          // If selected, add row to selected
-          if (!value) {
-            return setSelected([...selected, row.id])
-          }
-          // If un-selected, return array w/o item
-          const filteredSelected = selected.filter((id) => id !== row.id)
-          return setSelected(filteredSelected)
-        }}
+        rowSelectionModel={selected}
       />
     </div>
   )

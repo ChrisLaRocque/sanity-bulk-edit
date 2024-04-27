@@ -1,24 +1,53 @@
 import {useEffect, useCallback, useState} from 'react'
 import {PublishIcon, UnpublishIcon} from '@sanity/icons'
-import {GridApi, useGridApiRef} from '@mui/x-data-grid'
+import {useGridApiRef, type GridRowSelectionModel} from '@mui/x-data-grid'
 import {Card, Container, Stack, Heading, Text, Flex, Button, useToast} from '@sanity/ui'
 import DataTable from './table'
 import {SanityDocument, useClient, useDataset, useProjectId, useSchema} from 'sanity'
 
-function previewDrafts(docs: SanityDocument[]) {
+// Perspective is 'raw' by default
+// TODO fix any
+function previewDrafts(docs: any[]) {
   // At this point I should just set up a non-useClient client with perspectives?
   const draftDocIds = docs.filter(({_id}) => _id.startsWith('drafts.')).map(({_id}) => _id.slice(7))
   const filteredDocs = docs.filter(({_id}) => !draftDocIds.includes(_id))
-  return filteredDocs
+  return filteredDocs.map((doc) => {
+    // Clear out "drafts." from IDs
+    return {
+      ...doc,
+      id: removeDraftFromIds(doc.id),
+      _id: removeDraftFromIds(doc._id),
+    }
+  })
+}
+
+function removeDraftFromIds(_id: string) {
+  if (_id.startsWith('drafts.')) {
+    return _id.slice(7)
+  }
+  return _id
+}
+
+// Format selected IDs for Sanity Publishing API
+function format(arr: GridRowSelectionModel) {
+  return arr.map((_id) => {
+    return {
+      documentId: _id,
+    }
+  })
 }
 
 export default function BulkEdit() {
   const [rows, setRows] = useState<SanityDocument[]>([])
-  const [selected, setSelected] = useState<string[]>([])
+  const [selected, setSelected] = useState<GridRowSelectionModel>([])
   const [error, setError] = useState(false)
+  const [loading, setLoading] = useState(true)
+
+  // Sanity toast for notifications
   const toast = useToast()
+
+  // Modify table state
   const apiRef = useGridApiRef()
-  console.log('api', apiRef)
 
   // Get Sanity schema info
   const schema = useSchema()
@@ -34,37 +63,23 @@ export default function BulkEdit() {
     if (!schemaTypes?.length) return setError(true)
     try {
       const res = await client.fetch<SanityDocument[]>(
-        `*[_type in $schemaTypes]{title, _id, _updatedAt, _type, "id":_id}`,
+        `*[_type in $schemaTypes]{title, _id, _updatedAt, _type, "id": _id}`,
         {
           schemaTypes,
         },
       )
-
       setRows(previewDrafts(res))
+      setLoading(false)
     } catch (e) {
       console.error('Error fetching row data', error)
       setError(true)
     }
   }, [client, error, schemaTypes])
 
-  // Format selected IDs for Sanity Publishing API
-  const format = (arr: string[]) =>
-    arr
-      .map((_id) => {
-        if (_id.startsWith('drafts.')) {
-          return _id.slice(7)
-        }
-        return _id
-      })
-      .map((_id) => {
-        return {
-          documentId: _id,
-        }
-      })
-
   // Modify documents
   const modifyDocuments = useCallback(
     async (action: 'publish' | 'unpublish') => {
+      setLoading(true)
       await client
         .request({
           method: 'POST',
@@ -77,8 +92,8 @@ export default function BulkEdit() {
             status: 'success',
             title: 'Success',
           })
-          // reset table
           setSelected([])
+          // reset table
           fetchTable()
         })
         .catch((error) => {
@@ -89,9 +104,8 @@ export default function BulkEdit() {
           })
         })
       // there has to be a better way
-      apiRef.current.forceUpdate()
     },
-    [dataset, pid, client, selected, fetchTable, toast, apiRef],
+    [dataset, pid, client, selected, fetchTable, toast],
   )
 
   // If no row data
@@ -112,13 +126,13 @@ export default function BulkEdit() {
               text="Unpublish"
               icon={UnpublishIcon}
               onClick={(e) => modifyDocuments('unpublish')}
-              disabled={!selected.length}
+              disabled={!selected.length || loading}
             />
             <Button
               text="Publish"
               icon={PublishIcon}
               onClick={(e) => modifyDocuments('publish')}
-              disabled={!selected.length}
+              disabled={!selected.length || loading}
             />
           </Flex>
         </Card>

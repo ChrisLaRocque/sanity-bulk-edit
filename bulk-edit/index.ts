@@ -1,10 +1,10 @@
 import {DashboardIcon} from '@sanity/icons'
 import BulkEdit from './components'
 
-export const myCustomTool = () => {
+export const bulkEdit = () => {
   return {
-    title: 'My Custom Tool',
-    name: 'my-custom-tool', // localhost:3333/my-custom-tool
+    title: 'Bulk edit',
+    name: 'bulk-edit', // localhost:3333/my-custom-tool
     icon: DashboardIcon,
     component: (props) => BulkEdit(),
   }
