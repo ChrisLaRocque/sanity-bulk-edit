@@ -27,3 +27,7 @@ Check out the [@mui/x-data-grid installation guide](https://mui.com/x/react-data
 ## Example usage
 
 ![example of table in use](example.png)
+
+## Why not a plugin?
+
+There's so much variation in what folks want out of a table, it would be tough to maintain a plugin like this that covers all use cases. Hopefully this can provide users a good starting point, which can then be expanded by wiring up additional parts of the @mui/x-data-grid APIs to Sanity's APIs.
