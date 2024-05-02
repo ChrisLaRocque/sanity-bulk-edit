@@ -1,5 +1,5 @@
 import {useEffect, useCallback, useState} from 'react'
-import {SanityDocument, useClient, useDataset, useProjectId, useSchema} from 'sanity'
+import {type SanityDocument, useClient, useDataset, useProjectId, useSchema} from 'sanity'
 import {Card, Container, Stack, Heading, Text, Flex, Button, useToast} from '@sanity/ui'
 import {PublishIcon, UnpublishIcon} from '@sanity/icons'
 import {type GridRowSelectionModel} from '@mui/x-data-grid'
@@ -103,7 +103,7 @@ export default function BulkEdit() {
           console.log(`${action} completed`, data)
           toast.push({
             status: 'success',
-            title: 'Success',
+            title: `${rowSelectionModel.length} docuemnts ${action}ed`,
           })
           setRowSelectionModel([]) // Clear selected rows
           fetchTable() // re-fetch table data

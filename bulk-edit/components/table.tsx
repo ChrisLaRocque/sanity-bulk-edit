@@ -1,11 +1,11 @@
+import {type Dispatch, type SetStateAction} from 'react'
 import {
   DataGrid,
-  GridColDef,
-  GridInputRowSelectionModel,
-  GridRowSelectionModel,
+  type GridColDef,
+  type GridInputRowSelectionModel,
+  type GridRowSelectionModel,
 } from '@mui/x-data-grid'
-import {Dispatch, SetStateAction} from 'react'
-import {SanityDocument} from 'sanity'
+import {type SanityDocument} from 'sanity'
 
 // Column config
 const columns: GridColDef[] = [

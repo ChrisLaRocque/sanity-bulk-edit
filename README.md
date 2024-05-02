@@ -28,6 +28,10 @@ Check out the [@mui/x-data-grid installation guide](https://mui.com/x/react-data
 
 ![example of table in use](example.png)
 
+## What it does
+
+Right now it loads all documents in a Content Lake into a table that can be filtered/sorted. The documents can be selected for bulk publish/unpublish.
+
 ## Why not a plugin?
 
 There's so much variation in what folks want out of a table, it would be tough to maintain a plugin like this that covers all use cases. Hopefully this can provide users a good starting point, which can then be expanded by wiring up additional parts of the @mui/x-data-grid APIs to Sanity's APIs.
